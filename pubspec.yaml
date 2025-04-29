@@ -1,0 +1,35 @@
+name: kitchen_inventory
+description: "A new Flutter project."
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  shared_preferences: ^2.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter 
+
+  # firebase_auth: ^5.5.2
+  # cloud_firestore: ^4.13.0
+  # firebase_core: ^2.15.0
+  # # flutter_blur: ^3.0.0
+  hive: ^2.2.3  # Local storage
+  hive_flutter: ^1.1.0  # Flutter Hive helper
+  path_provider: ^2.0.11  # Get local file paths
+  flutter_lints: ^5.0.0
+  google_fonts: ^6.1.0  # For better typography
+
+flutter:
+  assets:
+    - assets/background.jpg
+
+  uses-material-design: true
