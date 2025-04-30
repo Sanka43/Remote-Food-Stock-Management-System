@@ -15,6 +15,7 @@ dependencies:
   shared_preferences: ^2.1.0
   percent_indicator: ^4.2.2
   pie_chart: ^5.3.2
+  step_progress_indicator: ^1.0.2
   
 
 dev_dependencies:
