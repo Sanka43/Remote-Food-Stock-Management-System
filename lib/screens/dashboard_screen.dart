@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:ui';
 import 'product.dart';
 import 'package:step_progress_indicator/step_progress_indicator.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'login_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   final List<Map<String, dynamic>> stockItems = [
@@ -30,93 +32,174 @@ class DashboardScreen extends StatelessWidget {
     final stockData = getStockDataForPieChart();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         title: Text(
-          "Inventory Dashboard",
+          'Smart Kitchen World',
           style: GoogleFonts.poppins(
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: Colors.white,
           ),
         ),
-        actions: [
-          TextButton.icon(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            icon: const Icon(Icons.logout, color: Colors.black),
-            label: const Text("Logout", style: TextStyle(color: Colors.black)),
-          ),
-        ],
+        backgroundColor: const Color.fromARGB(255, 1, 14, 7),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
 
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+      drawer: Drawer(
+        child: Column(
+          children: [
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(
+                color: Color.fromARGB(255, 1, 14, 7),
+              ),
+              currentAccountPicture: const CircleAvatar(
+                backgroundImage: AssetImage('assets/profile.jpg'),
+              ),
+              accountName: Text(
+                "Sanka Eranga",
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
+              accountEmail: Text(
+                "isankaerangahtc820@gmail.com",
+                style: GoogleFonts.poppins(),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: Text("Edit Profile", style: GoogleFonts.poppins()),
+              onTap: () {
+                // Navigate to Edit Profile screen (implement as needed)
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Edit Profile tapped")),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: Text("Log Out", style: GoogleFonts.poppins()),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text("Logged out")));
+              },
+            ),
+          ],
+        ),
+      ),
+
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/dashboard_backgraund_2.jpg',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Column(
             children: [
-              _buildPiechartCard(context, stockData),
-              const SizedBox(height: 20),
-              _buildQuickAccessButton(context),
-              const SizedBox(height: 20),
-              _buildLineChartCard(),
-              const SizedBox(height: 20),
-              // _buildStockItemList(context),
-              const SizedBox(height: 20),
-              _buildLowStockList(),
-              const SizedBox(height: 20),
-              
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildPiechartCard(context, stockData),
+                      const SizedBox(height: 20),
+                      _buildQuickAccessButton(context),
+                      const SizedBox(height: 20),
+                      _buildLineChartCard(),
+                      const SizedBox(height: 20),
+                      _buildLowStockList(),
+                      const SizedBox(height: 100),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                color: Colors.white.withOpacity(0.1),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 0,
+                  vertical: 12,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildBottomButton(Icons.home, "Home", () {}),
+                    _buildBottomButton(Icons.inventory, "Stock", () {}),
+                    _buildBottomButton(Icons.list_alt, "Orders", () {}),
+                    _buildBottomButton(Icons.settings, "Settings", () {}),
+                  ],
+                ),
+              ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildPiechartCard(BuildContext context, Map<String, double> stockData) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 200,
-            child: PieChart(
-              PieChartData(
-                sections: stockData.entries.map((entry) {
-                  final colorList = [
-                    Colors.blue[300]!,
-                    Colors.green[300]!,
-                    Colors.orange[300]!,
-                    Colors.red[300]!,
-                    Colors.purple[300]!,
-                  ];
-                  int index = stockData.keys.toList().indexOf(entry.key);
-                  return PieChartSectionData(
-                    value: entry.value,
-                    title: '${entry.key}\n${entry.value.toInt()}',
-                    color: colorList[index % colorList.length],
-                    titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black),
-                    radius: 60,
-                  );
-                }).toList(),
-                sectionsSpace: 2,
-                centerSpaceRadius: 40,
-              ),
+  Widget _buildPiechartCard(
+    BuildContext context,
+    Map<String, double> stockData,
+  ) {
+    final colorList = [
+      Colors.blue[300]!,
+      Colors.green[300]!,
+      Colors.orange[300]!,
+      Colors.red[300]!,
+      Colors.purple[300]!,
+    ];
+    final keys = stockData.keys.toList();
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color.fromARGB(55, 255, 255, 255),
+              width: 2,
             ),
           ),
-        ],
+          child: Column(
+            children: [
+              SizedBox(
+                height: 200,
+                child: PieChart(
+                  PieChartData(
+                    sections:
+                        stockData.entries.map((entry) {
+                          int index = keys.indexOf(entry.key);
+                          return PieChartSectionData(
+                            value: entry.value,
+                            title: '${entry.key}\n${entry.value.toInt()}',
+                            color: colorList[index % colorList.length],
+                            titleStyle: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                            radius: 60,
+                          );
+                        }).toList(),
+                    sectionsSpace: 2,
+                    centerSpaceRadius: 40,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -132,7 +215,13 @@ class DashboardScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text("Day by Day Usage", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w500)),
+          Text(
+            "Day by Day Usage",
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           const SizedBox(height: 12),
           SizedBox(
             height: 200,
@@ -140,16 +229,29 @@ class DashboardScreen extends StatelessWidget {
               LineChartData(
                 gridData: FlGridData(show: true),
                 titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: true),
+                  ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       interval: 1,
                       getTitlesWidget: (value, _) {
-                        final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                        final days = [
+                          'Mon',
+                          'Tue',
+                          'Wed',
+                          'Thu',
+                          'Fri',
+                          'Sat',
+                          'Sun',
+                        ];
                         return Padding(
                           padding: const EdgeInsets.only(top: 4.0),
-                          child: Text(days[value.toInt() % 7], style: const TextStyle(fontSize: 10)),
+                          child: Text(
+                            days[value.toInt() % 7],
+                            style: const TextStyle(fontSize: 10),
+                          ),
                         );
                       },
                     ),
@@ -186,18 +288,39 @@ class DashboardScreen extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _buildDashboardCard("Products", Icons.inventory, Colors.blue, onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => Product()));
-            }),
-            _buildDashboardCard("Suppliers", Icons.local_shipping, Colors.green),
-            _buildDashboardCard("Reports", Icons.analytics, Colors.red),
+            _buildDashboardCard(
+              "Products",
+              Icons.inventory,
+              const Color.fromARGB(255, 255, 255, 255),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => Product()),
+                );
+              },
+            ),
+            _buildDashboardCard(
+              "Suppliers",
+              Icons.local_shipping,
+              const Color.fromARGB(255, 255, 255, 255),
+            ),
+            _buildDashboardCard(
+              "Reports",
+              Icons.analytics,
+              const Color.fromARGB(255, 255, 255, 255),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDashboardCard(String title, IconData icon, Color color, {VoidCallback? onPressed}) {
+  Widget _buildDashboardCard(
+    String title,
+    IconData icon,
+    Color color, {
+    VoidCallback? onPressed,
+  }) {
     return Container(
       margin: const EdgeInsets.only(right: 16),
       child: InkWell(
@@ -208,7 +331,11 @@ class DashboardScreen extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 6, offset: const Offset(0, 2)),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
             ],
           ),
           child: Padding(
@@ -218,7 +345,10 @@ class DashboardScreen extends StatelessWidget {
               children: [
                 Icon(icon, size: 30, color: color),
                 const SizedBox(height: 8),
-                Text(title, style: GoogleFonts.poppins(color: Colors.black, fontSize: 16)),
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(color: const Color.fromARGB(255, 255, 255, 255), fontSize: 16),
+                ),
               ],
             ),
           ),
@@ -243,9 +373,10 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildStockItem(BuildContext context, Map<String, dynamic> item) {
     double percentage = item["stock"] / item["maxStock"];
-    Color progressColor = percentage > 0.5
-        ? Colors.green
-        : (percentage > 0.2 ? Colors.orange : Colors.red);
+    Color progressColor =
+        percentage > 0.5
+            ? Colors.green
+            : (percentage > 0.2 ? Colors.orange : Colors.red);
 
     return Container(
       width: 200,
@@ -258,8 +389,13 @@ class DashboardScreen extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              Text(item["name"],
-                  style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w500)),
+              Text(
+                item["name"],
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               const SizedBox(height: 10),
               CircularStepProgressIndicator(
                 totalSteps: 100,
@@ -275,7 +411,10 @@ class DashboardScreen extends StatelessWidget {
                 child: Center(
                   child: Text(
                     "${(percentage * 100).toInt()}%",
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -288,11 +427,13 @@ class DashboardScreen extends StatelessWidget {
                     onPressed: () => _showOrderDialog(context, item["name"]),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: const Text("Order Now"),
                   ),
-                )
+                ),
             ],
           ),
         ),
@@ -301,11 +442,27 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildLowStockList() {
-  final lowStockItems = stockItems
-      .where((item) => item["stock"] / item["maxStock"] < 0.25)
-      .toList();
+    final lowStockItems =
+        stockItems
+            .where((item) => item["stock"] / item["maxStock"] < 0.25)
+            .toList();
 
-  if (lowStockItems.isEmpty) {
+    if (lowStockItems.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+        ),
+        child: Text(
+          "All stock levels are sufficient.",
+          style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -314,71 +471,56 @@ class DashboardScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
       ),
-      child: Text(
-        "All stock levels are sufficient.",
-        style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Low Stock Alerts",
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...lowStockItems.map((item) {
+            final double percent = item["stock"] / item["maxStock"];
+            final percentText = (percent * 100).toStringAsFixed(0);
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(item["name"], style: GoogleFonts.poppins(fontSize: 16)),
+                  const SizedBox(height: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(
+                      value: percent,
+                      minHeight: 10,
+                      backgroundColor: Colors.grey[300],
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        percent < 0.1 ? Colors.red : Colors.orange,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "$percentText% of ${item["maxStock"]}",
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: Colors.red[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ],
       ),
     );
   }
-
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Low Stock Alerts",
-          style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 12),
-        ...lowStockItems.map((item) {
-          final double percent = item["stock"] / item["maxStock"];
-          final percentText = (percent * 100).toStringAsFixed(0);
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item["name"],
-                  style: GoogleFonts.poppins(fontSize: 16),
-                ),
-                const SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: percent,
-                    minHeight: 10,
-                    backgroundColor: Colors.grey[300],
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      percent < 0.1 ? Colors.red : Colors.orange,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "$percentText% of ${item["maxStock"]}",
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: Colors.red[700],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-      ],
-    ),
-  );
-}
 
   void _showOrderDialog(BuildContext context, String itemName) {
     showDialog(
@@ -404,6 +546,16 @@ class DashboardScreen extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildBottomButton(IconData icon, String label, VoidCallback onTap) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(icon: Icon(icon, color: Colors.black), onPressed: onTap),
+        Text(label, style: const TextStyle(fontSize: 12)),
+      ],
     );
   }
 }
