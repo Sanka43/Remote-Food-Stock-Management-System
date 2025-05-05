@@ -1,20 +1,19 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:percent_indicator/percent_indicator.dart';
-import 'package:pie_chart/pie_chart.dart';
 import 'product.dart';
 import 'package:step_progress_indicator/step_progress_indicator.dart';
-
+import 'package:fl_chart/fl_chart.dart';
 
 class DashboardScreen extends StatelessWidget {
   final List<Map<String, dynamic>> stockItems = [
-    {"name": "Rice", "stock": 352, "maxStock": 500},
-    {"name": "Dhal", "stock": 50, "maxStock": 80},
-    {"name": "Sugar", "stock": 10, "maxStock": 250},
+    {"name": "Rice", "stock": 49, "maxStock": 200},
+    {"name": "Dhal", "stock": 70, "maxStock": 80},
+    {"name": "Sugar", "stock": 21, "maxStock": 100},
     {"name": "Salt", "stock": 35, "maxStock": 50},
     {"name": "Oil", "stock": 12, "maxStock": 20},
   ];
+
+  final List<double> dailyUsage = [30, 45, 28, 55, 40, 65, 50];
 
   DashboardScreen({Key? key}) : super(key: key);
 
@@ -31,7 +30,7 @@ class DashboardScreen extends StatelessWidget {
     final stockData = getStockDataForPieChart();
 
     return Scaffold(
-      backgroundColor: Color(0xFFF9F9F9), // Light neutral background
+      backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
@@ -47,160 +46,197 @@ class DashboardScreen extends StatelessWidget {
         actions: [
           TextButton.icon(
             onPressed: () {
-              Navigator.pop(context); // or navigate to login
+              Navigator.pop(context);
             },
-            icon: Icon(Icons.logout, color: Colors.black),
-            label: Text(
-              "Logout",
-              style: TextStyle(color: Colors.black),
-            ),
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
+            icon: const Icon(Icons.logout, color: Colors.black),
+            label: const Text("Logout", style: TextStyle(color: Colors.black)),
           ),
-          SizedBox(width: 12),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              _buildPiechartCard(context, stockData),
+              const SizedBox(height: 20),
+              _buildQuickAccessButton(context),
+              const SizedBox(height: 20),
+              _buildLineChartCard(),
+              const SizedBox(height: 20),
+              // _buildStockItemList(context),
+              const SizedBox(height: 20),
+              _buildLowStockList(),
+              const SizedBox(height: 20),
+              
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPiechartCard(BuildContext context, Map<String, double> stockData) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 200,
+            child: PieChart(
+              PieChartData(
+                sections: stockData.entries.map((entry) {
+                  final colorList = [
+                    Colors.blue[300]!,
+                    Colors.green[300]!,
+                    Colors.orange[300]!,
+                    Colors.red[300]!,
+                    Colors.purple[300]!,
+                  ];
+                  int index = stockData.keys.toList().indexOf(entry.key);
+                  return PieChartSectionData(
+                    value: entry.value,
+                    title: '${entry.key}\n${entry.value.toInt()}',
+                    color: colorList[index % colorList.length],
+                    titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black),
+                    radius: 60,
+                  );
+                }).toList(),
+                sectionsSpace: 2,
+                centerSpaceRadius: 40,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLineChartCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
+      ),
+      child: Column(
+        children: [
+          Text("Day by Day Usage", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 200,
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(show: true),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      interval: 1,
+                      getTitlesWidget: (value, _) {
+                        final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Text(days[value.toInt() % 7], style: const TextStyle(fontSize: 10)),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(show: true),
+                lineBarsData: [
+                  LineChartBarData(
+                    isCurved: true,
+                    spots: List.generate(
+                      dailyUsage.length,
+                      (index) => FlSpot(index.toDouble(), dailyUsage[index]),
+                    ),
+                    dotData: FlDotData(show: true),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: Colors.deepPurple.withOpacity(0.2),
+                    ),
+                    color: Colors.deepPurple,
+                    barWidth: 3,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickAccessButton(BuildContext context) {
+    return Container(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
           children: [
-            // Pie Chart
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Text("Stock Distribution",
-                      style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black)),
-                  SizedBox(height: 12),
-                  PieChart(
-                    dataMap: stockData,
-                    chartRadius: MediaQuery.of(context).size.width / 2.5,
-                    colorList: [
-                      Colors.blue[300]!,
-                      Colors.green[300]!,
-                      Colors.orange[300]!,
-                      Colors.red[300]!,
-                      Colors.purple[300]!,
-                    ],
-                    chartValuesOptions: ChartValuesOptions(
-                      showChartValuesInPercentage: true,
-                      chartValueStyle: TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.bold),
-                    ),
-                    legendOptions: LegendOptions(
-                      legendTextStyle: TextStyle(color: Colors.black),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 24),
-
-            // Quick Access Cards Section
-            Text("Quick Access",
-                style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black)),
-            SizedBox(height: 16),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildDashboardCard("Products", Icons.inventory, Colors.blue,
-                      onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => Product(),
-                      ),
-                    );
-                  }),
-                  // _buildDashboardCard("Categories", Icons.category, Colors.orange),
-                  _buildDashboardCard("Suppliers", Icons.local_shipping, Colors.green),
-                  _buildDashboardCard("Reports", Icons.analytics, Colors.red),
-                ],
-              ),
-            ),
-            SizedBox(height: 24),
-
-            // Stock Indicators Section
-            Text("Stock Levels",
-                style: GoogleFonts.poppins(
-                    fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black)),
-            SizedBox(height: 16),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children:
-                    stockItems.map((item) => _buildStockItem(context, item)).toList(),
-              ),
-            ),
+            _buildDashboardCard("Products", Icons.inventory, Colors.blue, onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => Product()));
+            }),
+            _buildDashboardCard("Suppliers", Icons.local_shipping, Colors.green),
+            _buildDashboardCard("Reports", Icons.analytics, Colors.red),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDashboardCard(String title, IconData icon, Color color,
-      {VoidCallback? onPressed}) {
+  Widget _buildDashboardCard(String title, IconData icon, Color color, {VoidCallback? onPressed}) {
     return Container(
-      margin: EdgeInsets.only(right: 16),
-      width: 100,
-      height: 90,
+      margin: const EdgeInsets.only(right: 16),
       child: InkWell(
         onTap: onPressed,
         borderRadius: BorderRadius.circular(16),
         child: Ink(
           decoration: BoxDecoration(
-            color: Color.fromARGB(255, 255, 255, 255),// color.withOpacity(0.1), //Light background for cards
+            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 6,
-                offset: Offset(0, 2),
-              ),
+              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 6, offset: const Offset(0, 2)),
             ],
           ),
           child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(icon, size: 30, color: color),
-                SizedBox(height: 0),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    color: Colors.black,
-                    fontSize: 16,
-                    // fontWeight: FontWeight.w500,
-                  ),
-                ),
+                const SizedBox(height: 8),
+                Text(title, style: GoogleFonts.poppins(color: Colors.black, fontSize: 16)),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildStockItemList(BuildContext context) {
+    return SizedBox(
+      height: 250,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 0),
+        itemCount: stockItems.length,
+        itemBuilder: (context, index) {
+          return _buildStockItem(context, stockItems[index]);
+        },
       ),
     );
   }
@@ -212,60 +248,137 @@ class DashboardScreen extends StatelessWidget {
         : (percentage > 0.2 ? Colors.orange : Colors.red);
 
     return Container(
-  width: 200,
-  margin: EdgeInsets.only(right: 16),
-  child: Card(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    elevation: 4,
-    color: Colors.white,
-    child: Padding(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Text(item["name"],
-              style: GoogleFonts.poppins(
-                  fontSize: 18, fontWeight: FontWeight.w500)),
-          SizedBox(height: 10),
-          CircularStepProgressIndicator(
-            totalSteps: 100,
-            currentStep: (percentage * 100).clamp(0, 100).toInt(),
-            stepSize: 10,
-            arcSize: 6,
-            selectedColor: progressColor,
-            unselectedColor: Colors.grey.shade300,
-            padding: 0,
-            width: 100,
-            height: 100,
-            roundedCap: (_, __) => true,
-            child: Center(
-              child: Text(
-                "${(percentage * 100).toInt()}%",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-          SizedBox(height: 10),
-          Text("${item["stock"]}",
-              style: TextStyle(fontSize: 14)),
-          if (percentage < 0.2)
-            Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: ElevatedButton(
-                onPressed: () => _showOrderDialog(context, item["name"]),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+      width: 200,
+      margin: const EdgeInsets.only(right: 16),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 4,
+        color: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Text(item["name"],
+                  style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 10),
+              CircularStepProgressIndicator(
+                totalSteps: 100,
+                currentStep: (percentage * 100).clamp(0, 100).toInt(),
+                stepSize: 10,
+                arcSize: 3.14 * 2,
+                selectedColor: progressColor,
+                unselectedColor: Colors.grey.shade300,
+                padding: 0,
+                width: 100,
+                height: 100,
+                roundedCap: (_, __) => true,
+                child: Center(
+                  child: Text(
+                    "${(percentage * 100).toInt()}%",
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
                 ),
-                child: Text("Order Now"),
               ),
-            )
-        ],
+              const SizedBox(height: 10),
+              Text("${item["stock"]}", style: const TextStyle(fontSize: 14)),
+              if (percentage < 0.2)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: ElevatedButton(
+                    onPressed: () => _showOrderDialog(context, item["name"]),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text("Order Now"),
+                  ),
+                )
+            ],
+          ),
+        ),
       ),
-    ),
-  ),
-);
+    );
   }
+
+  Widget _buildLowStockList() {
+  final lowStockItems = stockItems
+      .where((item) => item["stock"] / item["maxStock"] < 0.25)
+      .toList();
+
+  if (lowStockItems.isEmpty) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+      ),
+      child: Text(
+        "All stock levels are sufficient.",
+        style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500),
+      ),
+    );
+  }
+
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Low Stock Alerts",
+          style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 12),
+        ...lowStockItems.map((item) {
+          final double percent = item["stock"] / item["maxStock"];
+          final percentText = (percent * 100).toStringAsFixed(0);
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item["name"],
+                  style: GoogleFonts.poppins(fontSize: 16),
+                ),
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: percent,
+                    minHeight: 10,
+                    backgroundColor: Colors.grey[300],
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      percent < 0.1 ? Colors.red : Colors.orange,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "$percentText% of ${item["maxStock"]}",
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: Colors.red[700],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ],
+    ),
+  );
+}
 
   void _showOrderDialog(BuildContext context, String itemName) {
     showDialog(
@@ -277,15 +390,16 @@ class DashboardScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text("Cancel"),
+              child: const Text("Cancel"),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Order placed for $itemName")));
+                  SnackBar(content: Text("Order placed for $itemName")),
+                );
               },
-              child: Text("Order"),
+              child: const Text("Order"),
             ),
           ],
         );

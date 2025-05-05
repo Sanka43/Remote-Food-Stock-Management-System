@@ -4,57 +4,36 @@ class Product extends StatelessWidget {
   Product({super.key});
 
   final List<Map<String, dynamic>> productList = [
-    {
-      "name": "Tomatoes",
-      "stock": 80,
-      "price": 2.5,
-      "description": "Fresh red tomatoes",
-    },
-    {
-      "name": "Potatoes",
-      "stock": 50,
-      "price": 1.8,
-      "description": "Organic farm potatoes",
-    },
-    {
-      "name": "Onions",
-      "stock": 30,
-      "price": 2.0,
-      "description": "Imported purple onions",
-    },
-    {
-      "name": "Milk",
-      "stock": 2,
-      "price": 4.5,
-      "description": "Dairy fresh milk",
-    },
-    {
-      "name": "Eggs",
-      "stock": 5,
-      "price": 0.5,
-      "description": "Farm eggs - pack of 6",
-    },
+    {"name": "Rice", "stock": 49, "maxStock": 200},
+    {"name": "Dhal", "stock": 70, "maxStock": 80},
+    {"name": "Sugar", "stock": 21, "maxStock": 100},
+    {"name": "Salt", "stock": 35, "maxStock": 50},
+    {"name": "Oil", "stock": 12, "maxStock": 20},
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-  title: const Text("Product List"),
-  backgroundColor: Colors.green,
-  leading: IconButton(
-    icon: const Icon(Icons.arrow_back),
-    onPressed: () {
-      Navigator.pop(context);
-    },
-  ),
-),
-
+        title: const Text("Product List"),
+        backgroundColor: Colors.green,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: productList.length,
         itemBuilder: (context, index) {
           final product = productList[index];
+          final stock = product["stock"];
+          final maxStock = product["maxStock"];
+          final percent = stock / maxStock;
+          final percentText = (percent * 100).toStringAsFixed(1);
+
           return Card(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
@@ -75,13 +54,24 @@ class Product extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    product["description"],
-                    style: const TextStyle(fontSize: 14),
+                  LinearProgressIndicator(
+                    value: percent,
+                    minHeight: 10,
+                    backgroundColor: Colors.grey[300],
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      percent < 0.3 ? Colors.red : Colors.green,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  Text("Stock: ${product["stock"]}"),
-                  Text("Price: \$${product["price"].toStringAsFixed(2)}"),
+                  Text(
+                    "$percentText% of $maxStock",
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text("Stock: $stock"),
                 ],
               ),
             ),
